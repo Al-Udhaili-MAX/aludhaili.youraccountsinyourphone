@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>الديون 🗒️</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <script src="firebase-init.js"></script>
+
+  <style>
+    body {
+      background: url('images/background-handshake.gif') no-repeat center center fixed;
+      background-size: cover;
+      font-family: 'Tajawal', sans-serif;
+      color: white;
+      padding: 15px;
+      padding-bottom: 70px;
+    }
+    .top-buttons {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 15px;
+    }
+    .top-buttons button {
+      background: rgba(0,0,0,0.6);
+      border: none;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      font-size: 24px;
+      color: white;
+      cursor: pointer;
+      position: relative;
+    }
+    .top-buttons button:hover::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: 100%;
+      right: 50%;
+      transform: translateX(50%);
+      background: black;
+      color: white;
+      padding: 3px 8px;
+      border-radius: 5px;
+      white-space: nowrap;
+      font-size: 14px;
+      z-index: 10;
+    }
+    #debtsList {
+      background-color: rgba(0,0,0,0.7);
+      border-radius: 15px;
+      padding: 15px;
+      max-width: 600px;
+      margin: 0 auto;
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+    .debt-item {
+      background: rgba(255,255,255,0.1);
+      margin-bottom: 10px;
+      padding: 10px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .debt-item.selected {
+      background: rgba(255, 0, 0, 0.5);
+    }
+    .details {
+      margin-top: 10px;
+      background: rgba(0,0,0,0.6);
+      border-radius: 10px;
+      padding: 10px;
+      display: none;
+      font-size: 14px;
+      line-height: 1.4;
+      direction: rtl;
+    }
+    .debt-item button.delete-btn {
+      background: #f44336;
+      border: none;
+      color: white;
+      border-radius: 10px;
+      padding: 5px 10px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-left: 10px;
+    }
+    #multiDeleteBtn {
+      display: none;
+      background: #f44336;
+      width: 100%;
+      padding: 12px;
+      font-size: 18px;
+      border: none;
+      border-radius: 15px;
+      margin-top: 10px;
+      cursor: pointer;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+      color: white;
+    }
+    .footer-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+      z-index: 100;
+    }
+    .footer-nav button {
+      background: transparent;
+      border: none;
+      font-size: 24px;
+      color: white;
+      cursor: pointer;
+    }
+    .footer-nav button:hover,
+    .footer-nav button.active {
+      color: #FFD700;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-buttons">
+    <button id="shareBtn" data-tooltip="مشاركة الحساب">🔗</button>
+    <button id="resetBtn" data-tooltip="تهيئة الحسابات">♻️</button>
+    <button id="selectBtn" data-tooltip="تحديد للحذف">🗑️</button>
+  </div>
+
+  <div id="debtsList"></div>
+  <button id="multiDeleteBtn">حذف الحسابات المحددة</button>
+
+  <nav class="footer-nav">
+    <button id="navPage4" title="إضافة حساب مالي">🗒️</button>
+    <button id="navPage5" title="الديون">💰</button>
+    <button id="navPage6" title="الإعدادات">⚙️</button>
+  </nav>
+
+  <script>
+    let debts = JSON.parse(localStorage.getItem('debts')) || [];
+    let multiDeleteMode = false;
+    let selectedDebts = new Set();
+    const debtsList = document.getElementById('debtsList');
+    const multiDeleteBtn = document.getElementById('multiDeleteBtn');
+
+    function renderDebts() {
+      debtsList.innerHTML = '';
+      if(debts.length === 0){
+        debtsList.innerHTML = '<p>لا توجد ديون مسجلة.</p>';
+        return;
+      }
+
+      debts.forEach(debt => {
+        const item = document.createElement('div');
+        item.className = 'debt-item';
+        item.dataset.id = debt.id;
+
+        item.innerHTML = `
+          <span class="debt-name">${debt.name}</span>
+          <button class="delete-btn" title="حذف">حذف</button>
+          <div class="details">
+            <p>المبلغ: ${debt.amount} ${debt.currency}</p>
+            <p>رقم الجوال: ${debt.phone}</p>
+            <p>تاريخ الاستلاف: ${debt.borrowDate}</p>
+            <p>موعد الإعادة: ${debt.returnDate}</p>
+            <p>تفاصيل: ${debt.details || '-'}</p>
+          </div>
+        `;
+
+        item.querySelector('.debt-name').addEventListener('click', () => {
+          const detailsDiv = item.querySelector('.details');
+          detailsDiv.style.display = detailsDiv.style.display === 'block' ? 'none' : 'block';
+        });
+
+        item.querySelector('.delete-btn').addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (confirm(`هل أنت متأكد من حذف ${debt.name}؟`)) {
+            debts = debts.filter(d => d.id !== debt.id);
+            localStorage.setItem('debts', JSON.stringify(debts));
+            renderDebts();
+          }
+        });
+
+        if (multiDeleteMode) {
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.checked = selectedDebts.has(debt.id);
+          checkbox.addEventListener('change', () => {
+            checkbox.checked ? selectedDebts.add(debt.id) : selectedDebts.delete(debt.id);
+          });
+          item.prepend(checkbox);
+          item.classList.toggle('selected', selectedDebts.has(debt.id));
+        }
+
+        debtsList.appendChild(item);
+      });
+    }
+
+    document.getElementById('selectBtn').addEventListener('click', () => {
+      multiDeleteMode = !multiDeleteMode;
+      selectedDebts.clear();
+      multiDeleteBtn.style.display = multiDeleteMode ? 'block' : 'none';
+      renderDebts();
+    });
+
+    multiDeleteBtn.addEventListener('click', () => {
+      if (selectedDebts.size === 0) {
+        alert('حدد حساب واحد على الأقل');
+        return;
+      }
+      if (confirm(`حذف ${selectedDebts.size} حساب؟`)) {
+        debts = debts.filter(debt => !selectedDebts.has(debt.id));
+        localStorage.setItem('debts', JSON.stringify(debts));
+        multiDeleteMode = false;
+        selectedDebts.clear();
+        multiDeleteBtn.style.display = 'none';
+        renderDebts();
+      }
+    });
+
+    document.getElementById('shareBtn').addEventListener('click', () => {
+      if (debts.length === 0) return alert('لا توجد حسابات للمشاركة.');
+      let text = 'الحسابات:\n';
+      debts.forEach(d => {
+        text += `- ${d.name}: ${d.amount} ${d.currency}, 📲 ${d.phone}, ⏱️ ${d.returnDate}\n`;
+      });
+      navigator.share ? navigator.share({ text }) : prompt('انسخ وشارك:', text);
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      if (confirm('هل تريد حذف كل الحسابات؟')) {
+        debts = [];
+        localStorage.removeItem('debts');
+        renderDebts();
+      }
+    });
+
+    renderDebts();
+
+    // التنقل
+    document.getElementById('navPage4').onclick = () => location.href = 'accounts.html';
+    document.getElementById('navPage5').onclick = () => location.href = 'debts.html';
+    document.getElementById('navPage6').onclick = () => location.href = 'page6.html';
+  </script>
+
+  <!-- إشعارات Firebase -->
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const lastShown = localStorage.getItem('lastNotificationId');
+      try {
+        const snapshot = await db.collection("notifications")
+          .orderBy("createdAt", "desc")
+          .limit(1)
+          .get();
+
+        if (!snapshot.empty) {
+          const doc = snapshot.docs[0];
+          const data = doc.data();
+
+          if (doc.id !== lastShown) {
+            localStorage.setItem('lastNotificationId', doc.id);
+
+            if (data.type === 'popup' || data.type === 'both') {
+              showInPageNotification(data.title, data.message);
+            }
+
+            if ((data.type === 'notification' || data.type === 'both') && "Notification" in window) {
+              Notification.requestPermission().then(permission => {
+                if (permission === "granted") {
+                  new Notification(data.title, { body: data.message });
+                }
+              });
+            }
+          }
+        }
+      } catch (e) {
+        console.error("فشل تحميل الإشعار:", e);
+      }
+
+      function showInPageNotification(title, message) {
+        const div = document.createElement('div');
+        div.style.position = 'fixed';
+        div.style.top = '50%';
+        div.style.left = '50%';
+        div.style.transform = 'translate(-50%, -50%)';
+        div.style.background = 'rgba(0,0,0,0.85)';
+        div.style.padding = '20px';
+        div.style.color = 'white';
+        div.style.borderRadius = '15px';
+        div.style.zIndex = '9999';
+        div.style.maxWidth = '90%';
+        div.style.textAlign = 'center';
+        div.style.fontSize = '18px';
+        div.innerHTML = `<h3>${title}</h3><p>${message}</p><button onclick="this.parentElement.remove()">موافق</button>`;
+        document.body.appendChild(div);
+      }
+    });
+  </script>
+
+<script src="app.js"></script>
+</body>
+</html>

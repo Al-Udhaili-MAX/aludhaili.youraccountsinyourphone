@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>إضافة حسابات مالية 🗒️</title>
+  <link rel="stylesheet" href="css/styles.css" />
+
+  <!-- ربط Firebase -->
+  <script src="firebase-init.js"></script>
+
+  <style>
+    body {
+      background: url('images/background-money.gif') no-repeat center center fixed;
+      background-size: cover;
+      font-family: 'Tajawal', sans-serif;
+      color: white;
+      padding: 20px;
+    }
+    .form-container {
+      background-color: rgba(0,0,0,0.7);
+      max-width: 500px;
+      margin: 40px auto;
+      border-radius: 20px;
+      padding: 20px;
+      text-align: right;
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border-radius: 10px;
+      border: none;
+      font-size: 16px;
+      text-align: right;
+    }
+    button {
+      margin-top: 20px;
+      background-color: #4CAF50;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 18px;
+      color: white;
+      cursor: pointer;
+      width: 100%;
+    }
+    .success-message {
+      display: none;
+      margin-top: 15px;
+      color: #0f0;
+      font-size: 20px;
+      text-align: center;
+    }
+
+    .footer-nav {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      background-color: rgba(0,0,0,0.8);
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+      z-index: 1000;
+      border-top: 1px solid #555;
+    }
+    .footer-nav button {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+    }
+    .footer-nav button:hover {
+      color: #4CAF50;
+    }
+  </style>
+</head>
+<body>
+  <div class="form-container">
+    <h2>إضافة حساب مالي جديد</h2>
+
+    <label for="name">💳 الاسم</label>
+    <input type="text" id="name" placeholder="اسم الشخص" required />
+
+    <label for="amount">💵 المبلغ</label>
+    <input type="number" id="amount" placeholder="المبلغ" required />
+
+    <label for="phone">📲 رقم الجوال</label>
+    <input type="tel" id="phone" placeholder="رقم الجوال" required />
+
+    <label for="currency">💰 العملة</label>
+    <select id="currency" required>
+      <option value="يمني">يمني</option>
+      <option value="سعودي">سعودي</option>
+      <option value="دولار">دولار</option>
+    </select>
+
+    <label for="borrowDate">📆 اتسلفها (في تاريخ)</label>
+    <input type="date" id="borrowDate" required />
+
+    <label for="returnDate">🗓️ موعد إعادة الفلوس</label>
+    <input type="date" id="returnDate" required />
+
+    <label for="details">📋 تفاصيل آخر</label>
+    <textarea id="details" rows="3" placeholder="تفاصيل إضافية"></textarea>
+
+    <button onclick="addDebt()">اضافة الى صفحة الديون 🗒️</button>
+
+    <div class="success-message" id="successMsg">
+      تم الإضافة بنجاح! <button onclick="closeSuccess()">موافق</button>
+    </div>
+  </div>
+
+  <!-- شريط التنقل السفلي -->
+  <nav class="footer-nav">
+    <button id="navPage4" title="إضافة حساب مالي">🗒️</button>
+    <button id="navPage5" title="الديون">💰</button>
+    <button id="navPage6" title="الإعدادات">⚙️</button>
+  </nav>
+
+  <!-- إشعارات Firebase -->
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const lastShown = localStorage.getItem('lastNotificationId');
+
+      try {
+        const snapshot = await db.collection("notifications")
+          .orderBy("createdAt", "desc")
+          .limit(1)
+          .get();
+
+        if (!snapshot.empty) {
+          const doc = snapshot.docs[0];
+          const data = doc.data();
+
+          if (doc.id !== lastShown) {
+            localStorage.setItem('lastNotificationId', doc.id);
+
+            if (data.type === 'popup' || data.type === 'both') {
+              showInPageNotification(data.title, data.message);
+            }
+
+            if ((data.type === 'notification' || data.type === 'both') && "Notification" in window) {
+              Notification.requestPermission().then(permission => {
+                if (permission === "granted") {
+                  new Notification(data.title, { body: data.message });
+                }
+              });
+            }
+          }
+        }
+      } catch (e) {
+        console.error("فشل جلب الإشعارات:", e);
+      }
+
+      function showInPageNotification(title, message) {
+        const div = document.createElement('div');
+        div.style.position = 'fixed';
+        div.style.top = '50%';
+        div.style.left = '50%';
+        div.style.transform = 'translate(-50%, -50%)';
+        div.style.background = 'rgba(0,0,0,0.85)';
+        div.style.padding = '20px';
+        div.style.color = 'white';
+        div.style.borderRadius = '15px';
+        div.style.zIndex = '9999';
+        div.style.maxWidth = '90%';
+        div.style.textAlign = 'center';
+        div.style.fontSize = '18px';
+
+        div.innerHTML = `<h3>${title}</h3><p>${message}</p><button onclick="this.parentElement.remove()">موافق</button>`;
+        document.body.appendChild(div);
+      }
+    });
+
+    function addDebt() {
+      const name = document.getElementById('name').value.trim();
+      const amount = document.getElementById('amount').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const currency = document.getElementById('currency').value;
+      const borrowDate = document.getElementById('borrowDate').value;
+      const returnDate = document.getElementById('returnDate').value;
+      const details = document.getElementById('details').value.trim();
+
+      if (!name || !amount || !phone || !borrowDate || !returnDate) {
+        alert('يرجى ملء جميع الحقول المطلوبة');
+        return;
+      }
+
+      const debt = { name, amount, phone, currency, borrowDate, returnDate, details, id: Date.now() };
+
+      let debts = JSON.parse(localStorage.getItem('debts')) || [];
+      debts.push(debt);
+      localStorage.setItem('debts', JSON.stringify(debts));
+
+      document.getElementById('successMsg').style.display = 'block';
+      document.querySelector('button[onclick="addDebt()"]').disabled = true;
+    }
+
+    function closeSuccess() {
+      document.getElementById('successMsg').style.display = 'none';
+      document.querySelector('button[onclick="addDebt()"]').disabled = false;
+
+      document.getElementById('name').value = '';
+      document.getElementById('amount').value = '';
+      document.getElementById('phone').value = '';
+      document.getElementById('currency').value = 'يمني';
+      document.getElementById('borrowDate').value = '';
+      document.getElementById('returnDate').value = '';
+      document.getElementById('details').value = '';
+    }
+
+    // تصحيح التنقل بين الصفحات
+    document.getElementById("navPage4").onclick = () => location.href = "accounts.html";
+    document.getElementById("navPage5").onclick = () => location.href = "debts.html";
+    document.getElementById("navPage6").onclick = () => location.href = "page6.html";
+  </script>
+
+<script src="app.js"></script>
+</body>
+</html>

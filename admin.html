@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>صفحة الإدارة - إرسال إشعار</title>
+
+  <!-- تحميل Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js"></script>
+
+  <!-- تهيئة Firebase -->
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDK6pLHdCEOttVk0QcJCqr2fPhyEHz-Kvk",
+      authDomain: "your-accounts-in-your-phone.firebaseapp.com",
+      projectId: "your-accounts-in-your-phone",
+      storageBucket: "your-accounts-in-your-phone.firebasestorage.app",
+      messagingSenderId: "1056632872663",
+      appId: "1:1056632872663:web:bca575ca817836b126da92",
+      measurementId: "G-7HTVQG0CX6"
+    };
+
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+  </script>
+
+  <style>
+    body {
+      background-color: #1e1e1e;
+      color: white;
+      font-family: 'Tajawal', sans-serif;
+      padding: 40px;
+      text-align: center;
+    }
+    .form-box {
+      background-color: #2c2c2c;
+      padding: 20px;
+      border-radius: 15px;
+      max-width: 500px;
+      margin: auto;
+    }
+    input, textarea, select {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      border-radius: 10px;
+      border: none;
+      font-size: 16px;
+    }
+    button {
+      margin-top: 15px;
+      padding: 12px 20px;
+      border-radius: 10px;
+      background-color: #4CAF50;
+      color: white;
+      font-size: 18px;
+      border: none;
+      cursor: pointer;
+    }
+    #loginSection { display: block; }
+    #formSection { display: none; }
+  </style>
+</head>
+<body>
+
+  <h2>🔒 صفحة المدير</h2>
+
+  <!-- تسجيل الدخول -->
+  <div id="loginSection" class="form-box">
+    <input type="text" id="adminUser" placeholder="اسم المستخدم">
+    <input type="password" id="adminPass" placeholder="كلمة المرور">
+    <button onclick="checkLogin()">تسجيل الدخول</button>
+  </div>
+
+  <!-- نموذج إرسال الإشعار -->
+  <div id="formSection" class="form-box">
+    <h3>📢 إرسال إشعار</h3>
+    <input type="text" id="title" placeholder="عنوان الإشعار">
+    <textarea id="message" placeholder="نص الرسالة" rows="4"></textarea>
+    <select id="type">
+      <option value="popup">رسالة على الشاشة</option>
+      <option value="notification">إشعار على الجوال</option>
+      <option value="both">كلاهما</option>
+    </select>
+    <button onclick="sendNotification()">إرسال</button>
+    <p id="statusMsg"></p>
+  </div>
+
+  <script>
+    function checkLogin() {
+      const user = document.getElementById("adminUser").value.trim();
+      const pass = document.getElementById("adminPass").value.trim();
+      if (user === "Mohammed" && pass === "779957886") {
+        document.getElementById("loginSection").style.display = "none";
+        document.getElementById("formSection").style.display = "block";
+      } else {
+        alert("❌ اسم المستخدم أو كلمة المرور غير صحيحة");
+      }
+    }
+
+    function sendNotification() {
+      const title = document.getElementById("title").value.trim();
+      const message = document.getElementById("message").value.trim();
+      const type = document.getElementById("type").value;
+
+      if (!title || !message) {
+        alert("يرجى إدخال العنوان والرسالة.");
+        return;
+      }
+
+      db.collection("notifications").add({
+        title,
+        message,
+        type,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      })
+      .then(() => {
+        document.getElementById("statusMsg").innerText = "✅ تم إرسال الإشعار بنجاح.";
+        document.getElementById("title").value = "";
+        document.getElementById("message").value = "";
+        document.getElementById("type").value = "popup";
+      })
+      .catch(err => {
+        document.getElementById("statusMsg").innerText = "❌ حدث خطأ أثناء الإرسال: " + err.message;
+      });
+    }
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,52 @@
+body.splash-screen {
+  background: url('../images/background1.gif') no-repeat center center fixed;
+  background-size: cover;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-family: 'Tajawal', sans-serif;
+  color: white;
+  text-align: center;
+}
+
+.loader .spinner {
+  border: 6px solid #f3f3f3;
+  border-top: 6px solid #009688;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  animation: spin 1s linear infinite;
+  margin: 20px auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.footer-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: rgba(0,0,0,0.8);
+  display: flex;
+  justify-content: space-around;
+  padding: 10px 0;
+  z-index: 1000;
+}
+
+.footer-nav button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 28px;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.footer-nav button:hover,
+.footer-nav button.active {
+  color: #FFD700;
+}

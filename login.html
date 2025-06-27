@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تسجيل الدخول</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="app.js"></script> <!-- تفعيل PWA -->
+
+  <style>
+    body {
+      background: url('images/background-pen.gif') no-repeat center center fixed;
+      background-size: cover;
+      font-family: 'Tajawal', sans-serif;
+      padding: 20px;
+      color: white;
+    }
+
+    .form-container {
+      background-color: rgba(0, 0, 0, 0.7);
+      border-radius: 20px;
+      padding: 30px;
+      max-width: 400px;
+      margin: 60px auto;
+      text-align: center;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      text-align: right;
+    }
+
+    button {
+      background-color: #009688;
+      color: white;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .middle-button {
+      display: block;
+      margin: 20px auto;
+      background-color: #607D8B;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="form-container">
+    <h2>تسجيل الدخول</h2>
+
+    <input type="text" id="username" placeholder="اسم المستخدم" required>
+    <input type="password" id="password" placeholder="كلمة المرور" required>
+
+    <button onclick="login()">دخول</button>
+
+    <button class="middle-button" onclick="location.href='register.html'">ليس لديك حساب؟ سجل</button>
+  </div>
+
+  <script>
+    function login() {
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value.trim();
+
+      const savedUser = JSON.parse(localStorage.getItem("user"));
+
+      if (savedUser && savedUser.username === username && savedUser.password === password) {
+        alert("✅ تم تسجيل الدخول بنجاح!");
+        window.location.href = "accounts.html";
+      } else {
+        alert("❌ اسم المستخدم أو كلمة المرور غير صحيحة.");
+      }
+    }
+  </script>
+
+<script src="app.js"></script>
+</body>
+</html>
